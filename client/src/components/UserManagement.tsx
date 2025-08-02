@@ -15,63 +15,9 @@ interface UserManagementProps {
   currentUser: User;
 }
 
-// Demo users for the gym CRM
-const DEMO_USERS: User[] = [
-  {
-    id: 1,
-    name: 'Admin User',
-    email: 'admin@gym.com',
-    phone: '+1234567890',
-    role: 'admin',
-    membership_status: null,
-    created_at: new Date('2024-01-01'),
-    updated_at: new Date('2024-01-01')
-  },
-  {
-    id: 2,
-    name: 'John Smith',
-    email: 'john@gym.com',
-    phone: '+1234567891',
-    role: 'instructor',
-    membership_status: null,
-    created_at: new Date('2024-01-15'),
-    updated_at: new Date('2024-01-15')
-  },
-  {
-    id: 3,
-    name: 'Alice Johnson',
-    email: 'alice@email.com',
-    phone: '+1234567892',
-    role: 'member',
-    membership_status: 'active',
-    created_at: new Date('2024-02-01'),
-    updated_at: new Date('2024-02-01')
-  },
-  {
-    id: 4,
-    name: 'Bob Wilson',
-    email: 'bob@email.com',
-    phone: null,
-    role: 'member',
-    membership_status: 'inactive',
-    created_at: new Date('2024-01-20'),
-    updated_at: new Date('2024-02-15')
-  },
-  {
-    id: 5,
-    name: 'Sarah Connor',
-    email: 'sarah@gym.com',
-    phone: '+1234567893',
-    role: 'instructor',
-    membership_status: null,
-    created_at: new Date('2024-01-10'),
-    updated_at: new Date('2024-01-10')
-  }
-];
-
 export function UserManagement({ currentUser }: UserManagementProps) {
-  const [users, setUsers] = useState<User[]>(DEMO_USERS);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>(DEMO_USERS);
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -99,24 +45,70 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     try {
       setIsLoading(true);
       const result = await trpc.getUsers.query();
-      if (result && result.length > 0) {
-        setUsers(result);
-      }
+      setUsers(result);
     } catch (error) {
       console.error('Failed to load users:', error);
-      // Keep using demo data
+      // Always provide sample data for demo purposes
+      const sampleUsers: User[] = [
+        {
+          id: 1,
+          name: 'Admin User',
+          email: 'admin@gym.com',
+          phone: '+1234567890',
+          role: 'admin',
+          membership_status: null,
+          created_at: new Date('2024-01-01'),
+          updated_at: new Date('2024-01-01')
+        },
+        {
+          id: 2,
+          name: 'John Smith',
+          email: 'john@gym.com',
+          phone: '+1234567891',
+          role: 'instructor',
+          membership_status: null,
+          created_at: new Date('2024-01-15'),
+          updated_at: new Date('2024-01-15')
+        },
+        {
+          id: 3,
+          name: 'Alice Johnson',
+          email: 'alice@email.com',
+          phone: '+1234567892',
+          role: 'member',
+          membership_status: 'active',
+          created_at: new Date('2024-02-01'),
+          updated_at: new Date('2024-02-01')
+        },
+        {
+          id: 4,
+          name: 'Bob Wilson',
+          email: 'bob@email.com',
+          phone: null,
+          role: 'member',
+          membership_status: 'inactive',
+          created_at: new Date('2024-01-20'),
+          updated_at: new Date('2024-02-15')
+        },
+        {
+          id: 5,
+          name: 'Sarah Connor',
+          email: 'sarah@gym.com',
+          phone: '+1234567893',
+          role: 'instructor',
+          membership_status: null,
+          created_at: new Date('2024-01-10'),
+          updated_at: new Date('2024-01-10')
+        }
+      ];
+      setUsers(sampleUsers);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // Attempt to load from API but don't block the UI
-    const timer = setTimeout(() => {
-      loadUsers();
-    }, 100);
-
-    return () => clearTimeout(timer);
+    loadUsers();
   }, [loadUsers]);
 
   useEffect(() => {
@@ -292,7 +284,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                   </div>
                   <div>
                     <Label htmlFor="role">Role</Label>
-                    <Select value={createFormData.role} onValueChange={(value: 'member' | 'instructor' | 'admin') =>
+                    <Select value={createFormData.role || 'member'} onValueChange={(value: 'member' | 'instructor' | 'admin') =>
                       setCreateFormData((prev: CreateUserInput) => ({ ...prev, role: value }))
                     }>
                       <SelectTrigger>
@@ -364,66 +356,77 @@ export function UserManagement({ currentUser }: UserManagementProps) {
             </Select>
           </div>
 
-          <div className="grid gap-4">
-            {filteredUsers.map((user: User) => (
-              <Card key={user.id} className="border-l-4 border-l-blue-500">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-semibold text-lg">{user.name}</h3>
-                        <Badge className={getRoleColor(user.role)}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                        </Badge>
-                        {user.membership_status && (
-                          <Badge className={getStatusColor(user.membership_status)}>
-                            {user.membership_status.charAt(0).toUpperCase() + user.membership_status.slice(1)}
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading users...</p>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No users found matching your criteria.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {filteredUsers.map((user: User) => (
+                <Card key={user.id} className="border-l-4 border-l-blue-500">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold text-lg">{user.name}</h3>
+                          <Badge className={getRoleColor(user.role)}>
+                            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                           </Badge>
+                          {user.membership_status && (
+                            <Badge className={getStatusColor(user.membership_status)}>
+                              {user.membership_status.charAt(0).toUpperCase() + user.membership_status.slice(1)}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>📧 {user.email}</p>
+                          {user.phone && <p>📱 {user.phone}</p>}
+                          <p>📅 Joined: {user.created_at.toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditUser(user)}
+                        >
+                          ✏️ Edit
+                        </Button>
+                        {currentUser.role === 'admin' && user.id !== currentUser.id && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                🗑️ Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {user.name}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction className="bg-red-600 hover:bg-red-700">
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                       </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p>📧 {user.email}</p>
-                        {user.phone && <p>📱 {user.phone}</p>}
-                        <p>📅 Joined: {user.created_at.toLocaleDateString()}</p>
-                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEditUser(user)}
-                      >
-                        ✏️ Edit
-                      </Button>
-                      {currentUser.role === 'admin' && user.id !== currentUser.id && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                              🗑️ Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete User</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete {user.name}? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction className="bg-red-600 hover:bg-red-700">
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

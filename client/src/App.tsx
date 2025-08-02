@@ -12,8 +12,8 @@ import { MemberDashboard } from '@/components/MemberDashboard';
 import { InstructorDashboard } from '@/components/InstructorDashboard';
 import type { User } from '../../server/src/schema';
 
-// Demo data for the gym CRM
-const DEMO_USERS: User[] = [
+// Demo data for standalone operation
+const demoUsers: User[] = [
   {
     id: 1,
     name: 'Admin User',
@@ -47,49 +47,30 @@ const DEMO_USERS: User[] = [
 ];
 
 function App() {
-  const [currentUser, setCurrentUser] = useState<User>(DEMO_USERS[0]);
-  const [users, setUsers] = useState<User[]>(DEMO_USERS);
-  const [isLoading, setIsLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User>(demoUsers[0]);
+  const [users, setUsers] = useState<User[]>(demoUsers);
 
   const loadUsers = useCallback(async () => {
     try {
-      setIsLoading(true);
       const result = await trpc.getUsers.query();
-      if (result && result.length > 0) {
+      if (result.length > 0) {
         setUsers(result);
         setCurrentUser(result[0]);
       }
     } catch (error) {
       console.error('Failed to load users:', error);
-      // Keep using demo data when API fails
-    } finally {
-      setIsLoading(false);
+      // Continue with demo data - no need to change state
     }
   }, []);
 
   useEffect(() => {
-    // Short delay to attempt API call but don't block the UI
-    const timer = setTimeout(() => {
-      loadUsers();
-    }, 100);
-
-    return () => clearTimeout(timer);
+    // Load from API in background but don't block UI
+    loadUsers();
   }, [loadUsers]);
 
   const switchUser = (user: User) => {
     setCurrentUser(user);
   };
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading Gym CRM...</p>
-        </div>
-      </div>
-    );
-  }
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -237,7 +218,7 @@ function App() {
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <div className="flex-1">
                           <p className="text-sm font-medium">New member registration</p>
-                          <p className="text-xs text-gray-500">Alice Johnson - 2 hours ago</p>
+                          <p className="text-xs text-gray-500">{currentUser.name} - 2 hours ago</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
