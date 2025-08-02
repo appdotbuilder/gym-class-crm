@@ -1,18 +1,30 @@
 
+import { db } from '../db';
+import { usersTable } from '../db/schema';
 import { type CreateUserInput, type User } from '../schema';
 
-export async function createUser(input: CreateUserInput): Promise<User> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new user (member, instructor, or admin) and persisting it in the database.
-    // Should validate that membership_status is only set for members, and handle email uniqueness.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+export const createUser = async (input: CreateUserInput): Promise<User> => {
+  try {
+    // Validate that membership_status is only set for members
+    if (input.role !== 'member' && input.membership_status !== null) {
+      throw new Error('Membership status can only be set for members');
+    }
+
+    // Insert user record
+    const result = await db.insert(usersTable)
+      .values({
         name: input.name,
         email: input.email,
         phone: input.phone,
         role: input.role,
-        membership_status: input.membership_status,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as User);
-}
+        membership_status: input.membership_status
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('User creation failed:', error);
+    throw error;
+  }
+};
